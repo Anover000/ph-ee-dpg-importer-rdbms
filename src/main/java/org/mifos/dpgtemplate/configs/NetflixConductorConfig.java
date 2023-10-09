@@ -5,7 +5,7 @@ import com.netflix.conductor.client.http.TaskClient;
 import com.netflix.conductor.client.http.WorkflowClient;
 import com.netflix.conductor.client.worker.Worker;
 import java.util.Arrays;
-import javax.annotation.PostConstruct;
+import jakarta.annotation.PostConstruct;
 import org.mifos.dpgtemplate.conductorsampleworkers.AddNumbersWorker;
 import org.mifos.dpgtemplate.conductorsampleworkers.SampleWorker;
 import org.springframework.beans.factory.annotation.Value;
