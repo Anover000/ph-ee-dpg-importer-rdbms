@@ -1,8 +1,7 @@
 package org.mifos.pheedpgimporterrdbms.entity.task;
 
-import org.springframework.data.repository.CrudRepository;
-
 import java.util.List;
+import org.springframework.data.repository.CrudRepository;
 
 public interface TaskRepository extends CrudRepository<Task, Long> {
 

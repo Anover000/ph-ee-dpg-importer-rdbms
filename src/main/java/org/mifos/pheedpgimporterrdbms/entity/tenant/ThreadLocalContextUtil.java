@@ -18,11 +18,12 @@
  */
 package org.mifos.pheedpgimporterrdbms.entity.tenant;
 
+import javax.sql.DataSource;
 import org.springframework.util.Assert;
 
-import javax.sql.DataSource;
+public final class ThreadLocalContextUtil {
 
-public class ThreadLocalContextUtil {
+    private ThreadLocalContextUtil() {}
 
     private static final ThreadLocal<DataSource> tenantcontext = new ThreadLocal<>();
 

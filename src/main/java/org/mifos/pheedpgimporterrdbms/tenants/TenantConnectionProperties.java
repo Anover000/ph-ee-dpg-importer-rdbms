@@ -4,6 +4,7 @@ import lombok.Data;
 
 @Data
 public class TenantConnectionProperties {
+
     String name;
     String schemaServer;
     String schemaName;

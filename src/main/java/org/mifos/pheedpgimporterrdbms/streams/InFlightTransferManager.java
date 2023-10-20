@@ -1,6 +1,6 @@
 package org.mifos.pheedpgimporterrdbms.streams;
 
-import com.jayway.jsonpath.DocumentContext;
+import java.util.Optional;
 import org.mifos.pheedpgimporterrdbms.config.TransferTransformerConfig;
 import org.mifos.pheedpgimporterrdbms.entity.transfer.Transfer;
 import org.mifos.pheedpgimporterrdbms.entity.transfer.TransferRepository;
@@ -9,8 +9,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
-
-import java.util.Optional;
 
 @Component
 public class InFlightTransferManager {
@@ -24,7 +22,7 @@ public class InFlightTransferManager {
     private final Logger logger = LoggerFactory.getLogger(this.getClass());
 
     public Transfer retrieveOrCreateTransfer(String bpmn, String processInstanceKey) {
-//        Long processInstanceKey = record.read("$.value.processInstanceKey", Long.class);
+        // Long processInstanceKey = record.read("$.value.processInstanceKey", Long.class);
         Optional<TransferTransformerConfig.Flow> config = transferTransformerConfig.findFlow(bpmn);
         Transfer transfer = transferRepository.findByWorkflowInstanceKey(processInstanceKey);
         if (transfer == null) {

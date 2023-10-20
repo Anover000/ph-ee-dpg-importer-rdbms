@@ -1,6 +1,8 @@
 package org.mifos.pheedpgimporterrdbms.config;
 
 import jakarta.annotation.PostConstruct;
+import java.util.List;
+import java.util.Optional;
 import lombok.Data;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -8,14 +10,12 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Configuration;
 
-import java.util.List;
-import java.util.Optional;
-
 @EnableConfigurationProperties
 @Configuration
 @ConfigurationProperties(prefix = "transfer")
 @Data
 public class TransferTransformerConfig {
+
     private Logger logger = LoggerFactory.getLogger(this.getClass());
 
     @PostConstruct
@@ -30,6 +30,7 @@ public class TransferTransformerConfig {
 
     @Data
     public static class Flow {
+
         private String name;
         private String direction;
         private String type;
@@ -39,6 +40,7 @@ public class TransferTransformerConfig {
 
     @Data
     public static class Transformer {
+
         private String field;
         private String variableName;
         private String jsonPath;

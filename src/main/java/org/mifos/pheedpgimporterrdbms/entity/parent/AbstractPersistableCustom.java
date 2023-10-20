@@ -18,15 +18,16 @@
  */
 package org.mifos.pheedpgimporterrdbms.entity.parent;
 
-
-import jakarta.persistence.*;
+import jakarta.persistence.Column;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.MappedSuperclass;
 import net.minidev.json.annotate.JsonIgnore;
 import org.springframework.data.domain.Persistable;
-import java.io.Serializable;
-
 
 @MappedSuperclass
-public abstract class AbstractPersistableCustom<PK extends Serializable> implements Persistable<Long> {
+public abstract class AbstractPersistableCustom implements Persistable<Long> {
 
     @Id
     @Column(name = "ID")

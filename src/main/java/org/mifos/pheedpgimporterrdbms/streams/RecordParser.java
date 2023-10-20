@@ -1,18 +1,26 @@
 package org.mifos.pheedpgimporterrdbms.streams;
 
 import com.jayway.jsonpath.DocumentContext;
+import java.io.StringReader;
+import java.util.Date;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.stream.Collectors;
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.xpath.XPathFactory;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.text.StringEscapeUtils;
+import org.apache.logging.log4j.util.Strings;
 import org.mifos.pheedpgimporterrdbms.config.TransferTransformerConfig;
 import org.mifos.pheedpgimporterrdbms.entity.task.Task;
+import org.mifos.pheedpgimporterrdbms.entity.task.TaskRepository;
 import org.mifos.pheedpgimporterrdbms.entity.transfer.Transfer;
 import org.mifos.pheedpgimporterrdbms.entity.transfer.TransferRepository;
-import org.mifos.pheedpgimporterrdbms.entity.task.TaskRepository;
 import org.mifos.pheedpgimporterrdbms.entity.transfer.TransferStatus;
 import org.mifos.pheedpgimporterrdbms.entity.variable.Variable;
 import org.mifos.pheedpgimporterrdbms.entity.variable.VariableRepository;
 import org.mifos.pheedpgimporterrdbms.importer.JsonPathReader;
-import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.text.StringEscapeUtils;
-import org.apache.logging.log4j.util.Strings;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.PropertyAccessorFactory;
@@ -21,15 +29,6 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 import org.w3c.dom.Document;
 import org.xml.sax.InputSource;
-
-import javax.xml.parsers.DocumentBuilderFactory;
-import javax.xml.xpath.XPathFactory;
-import java.io.StringReader;
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.stream.Collectors;
 
 @Component
 public class RecordParser {
@@ -51,7 +50,7 @@ public class RecordParser {
 
     private final DocumentBuilderFactory documentBuilderFactory = DocumentBuilderFactory.newInstance();
 
-    private final XPathFactory xPathFactory = XPathFactory.newInstance();
+    private final XPathFactory pathFactory = XPathFactory.newInstance();
 
     private final Logger logger = LoggerFactory.getLogger(this.getClass());
 
@@ -62,10 +61,8 @@ public class RecordParser {
         Optional<TransferTransformerConfig.Flow> config = transferTransformerConfig.findFlow(bpmn);
 
         List<TransferTransformerConfig.Transformer> constantTransformers = transferTransformerConfig.getFlows().stream()
-                .filter(it -> bpmn.equalsIgnoreCase(it.getName()))
-                .flatMap(it -> it.getTransformers().stream())
-                .filter(it -> Strings.isNotBlank(it.getConstant()))
-                .toList();
+                .filter(it -> bpmn.equalsIgnoreCase(it.getName())).flatMap(it -> it.getTransformers().stream())
+                .filter(it -> Strings.isNotBlank(it.getConstant())).toList();
 
         if ("TRANSFER".equalsIgnoreCase(flowType)) {
             logger.info("Processing flow of type TRANSFER");
@@ -84,7 +81,7 @@ public class RecordParser {
                 }
 
                 Map<String, String> inputDataMap = recordDocument.read("$.inputData");
-                inputDataMap.forEach((key,value) -> {
+                inputDataMap.forEach((key, value) -> {
                     List<Object> variables = processVariable(key, value, bpmn, workflowInstanceKey, scheduledTime, flowType);
                     variables.forEach(variable -> {
                         variableRepository.save((Variable) variable);
@@ -93,7 +90,7 @@ public class RecordParser {
 
             } else if ("COMPLETED".equals(taskStatus)) {
                 Map<String, String> outputDataMap = recordDocument.read("$.outputData");
-                outputDataMap.forEach((key,value) -> {
+                outputDataMap.forEach((key, value) -> {
                     processVariable(key, value, bpmn, workflowInstanceKey, recordDocument.read("$.endTime"), flowType);
                 });
             }
@@ -110,17 +107,14 @@ public class RecordParser {
     }
 
     @Transactional
-    public List<Object> processWorkflow(DocumentContext recordDocument, String bpmn, String flowType, String workflowInstanceKey)
-    {
+    public List<Object> processWorkflow(DocumentContext recordDocument, String bpmn, String flowType, String workflowInstanceKey) {
         logger.info("Processing Task instance");
         String workflowStatus = recordDocument.read("$.status", String.class);
         Optional<TransferTransformerConfig.Flow> config = transferTransformerConfig.findFlow(bpmn);
 
         List<TransferTransformerConfig.Transformer> constantTransformers = transferTransformerConfig.getFlows().stream()
-                .filter(it -> bpmn.equalsIgnoreCase(it.getName()))
-                .flatMap(it -> it.getTransformers().stream())
-                .filter(it -> Strings.isNotBlank(it.getConstant()))
-                .toList();
+                .filter(it -> bpmn.equalsIgnoreCase(it.getName())).flatMap(it -> it.getTransformers().stream())
+                .filter(it -> Strings.isNotBlank(it.getConstant())).toList();
 
         if ("TRANSFER".equalsIgnoreCase(flowType)) {
             logger.info("Processing flow of type TRANSFER");
@@ -129,7 +123,7 @@ public class RecordParser {
                 logger.info("finishing transfer for processInstanceKey: {}", workflowInstanceKey);
                 transfer.setCompletedAt(new Date(recordDocument.read("$.endTime", Long.class)));
                 transfer.setStatus(TransferStatus.COMPLETED);
-            } else if("TERMINATED".equals(workflowStatus)){
+            } else if ("TERMINATED".equals(workflowStatus)) {
                 logger.info("terminating transfer for processInstanceKey: {}", workflowInstanceKey);
                 transfer.setCompletedAt(new Date(recordDocument.read("$.endTime", Long.class)));
                 transfer.setStatus(TransferStatus.TERMINATED);
@@ -141,23 +135,20 @@ public class RecordParser {
         return List.of();
     }
 
-    public List<Object> processVariable(String variableName, String variableValue, String bpmn, String workflowInstanceKey, Long timestamp, String flowType) {
+    public List<Object> processVariable(String variableName, String variableValue, String bpmn, String workflowInstanceKey, Long timestamp,
+            String flowType) {
         logger.info("Processing variable instance");
-        String value = variableValue.startsWith("\"") && variableValue.endsWith("\"") ? StringEscapeUtils.unescapeJson(variableValue.substring(1, variableValue.length() - 1)) : variableValue;
+        String value = variableValue.startsWith("\"") && variableValue.endsWith("\"")
+                ? StringEscapeUtils.unescapeJson(variableValue.substring(1, variableValue.length() - 1))
+                : variableValue;
 
-        List<Object> results = List.of(
-                new Variable()
-                        .withWorkflowInstanceKey(workflowInstanceKey)
-                        .withName(variableName)
-                        .withTimestamp(timestamp)
-                        .withValue(value));
+        List<Object> results = List.of(new Variable().withWorkflowInstanceKey(workflowInstanceKey).withName(variableName)
+                .withTimestamp(timestamp).withValue(value));
 
         logger.info("finding transformers for bpmn: {} and variable: {}", bpmn, variableName);
         List<TransferTransformerConfig.Transformer> matchingTransformers = transferTransformerConfig.getFlows().stream()
-                .filter(it -> bpmn.equalsIgnoreCase(it.getName()))
-                .flatMap(it -> it.getTransformers().stream())
-                .filter(it -> variableName.equalsIgnoreCase(it.getVariableName()))
-                .toList();
+                .filter(it -> bpmn.equalsIgnoreCase(it.getName())).flatMap(it -> it.getTransformers().stream())
+                .filter(it -> variableName.equalsIgnoreCase(it.getVariableName())).toList();
 
         logger.info("Processing variable {} and matchingTransformer size {}", variableName, matchingTransformers.size());
 
@@ -167,7 +158,8 @@ public class RecordParser {
     }
 
     @Transactional
-    private void matchTransformerForFlowType(String flowType, String bpmn, List<TransferTransformerConfig.Transformer> matchingTransformers, String variableName, String value, String workflowInstanceKey) {
+    private void matchTransformerForFlowType(String flowType, String bpmn, List<TransferTransformerConfig.Transformer> matchingTransformers,
+            String variableName, String value, String workflowInstanceKey) {
         Optional<TransferTransformerConfig.Flow> config = transferTransformerConfig.findFlow(bpmn);
         if ("TRANSFER".equalsIgnoreCase(flowType)) {
             Transfer transfer = inFlightTransferManager.retrieveOrCreateTransfer(bpmn, workflowInstanceKey);
@@ -181,19 +173,13 @@ public class RecordParser {
 
     public List<Object> processTask(DocumentContext recordDocument, String workflowInstanceKey, String valueType, Long timestamp) {
         logger.info("Processing task instance");
-        return List.of(
-                new Task()
-                        .withWorkflowInstanceKey(workflowInstanceKey)
-                        .withTimestamp(timestamp)
-                        .withIntent(recordDocument.read("$.status", String.class))
-                        .withRecordType(valueType)
-                        .withType(recordDocument.read("$.taskType", String.class))
-                        .withElementId(recordDocument.read("$.taskId", String.class))
-        );
+        return List.of(new Task().withWorkflowInstanceKey(workflowInstanceKey).withTimestamp(timestamp)
+                .withIntent(recordDocument.read("$.status", String.class)).withRecordType(valueType)
+                .withType(recordDocument.read("$.taskType", String.class)).withElementId(recordDocument.read("$.taskId", String.class)));
     }
 
-
-    private void applyTransformer(Object object, String variableName, String variableValue, TransferTransformerConfig.Transformer transformer) {
+    private void applyTransformer(Object object, String variableName, String variableValue,
+            TransferTransformerConfig.Transformer transformer) {
         logger.debug("applying transformer for field: {}", transformer.getField());
         try {
             String fieldName = transformer.getField();
@@ -224,7 +210,8 @@ public class RecordParser {
                 }
 
                 if (StringUtils.isBlank(value)) {
-                    logger.error("null result when setting field {} from variable {}. Jsonpath: {}, variable value: {}", fieldName, variableName, transformer.getJsonPath(), variableValue);
+                    logger.error("null result when setting field {} from variable {}. Jsonpath: {}, variable value: {}", fieldName,
+                            variableName, transformer.getJsonPath(), variableValue);
                 }
                 return;
             }
@@ -232,12 +219,13 @@ public class RecordParser {
             if (Strings.isNotBlank(transformer.getXpath())) {
                 logger.debug("applying xpath for variable {}", variableName);
                 Document document = documentBuilderFactory.newDocumentBuilder().parse(new InputSource(new StringReader(variableValue)));
-                String result = xPathFactory.newXPath().compile(transformer.getXpath()).evaluate(document);
+                String result = pathFactory.newXPath().compile(transformer.getXpath()).evaluate(document);
                 logger.debug("xpath result: {} for variable {}", result, variableName);
                 if (StringUtils.isNotBlank(result)) {
                     PropertyAccessorFactory.forBeanPropertyAccess(object).setPropertyValue(fieldName, result);
                 } else {
-                    logger.error("null result when setting field {} from variable {}. Xpath: {}, variable value: {}", fieldName, variableName, transformer.getXpath(), variableValue);
+                    logger.error("null result when setting field {} from variable {}. Xpath: {}, variable value: {}", fieldName,
+                            variableName, transformer.getXpath(), variableValue);
                 }
                 return;
             }

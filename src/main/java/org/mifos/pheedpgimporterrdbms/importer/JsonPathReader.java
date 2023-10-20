@@ -7,7 +7,9 @@ import com.jayway.jsonpath.Option;
 import com.jayway.jsonpath.ParseContext;
 import org.apache.commons.text.StringEscapeUtils;
 
-public class JsonPathReader {
+public final class JsonPathReader {
+
+    private JsonPathReader() {}
 
     private static ParseContext jsonParser;
 

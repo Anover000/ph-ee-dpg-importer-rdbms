@@ -1,15 +1,13 @@
 package org.mifos.pheedpgimporterrdbms.entity.task;
 
-
-import org.mifos.pheedpgimporterrdbms.entity.parent.AbstractPersistableCustom;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.With;
+import org.mifos.pheedpgimporterrdbms.entity.parent.AbstractPersistableCustom;
 
 @Entity
 @Table(name = "tasks")
@@ -17,7 +15,7 @@ import lombok.With;
 @With
 @NoArgsConstructor
 @AllArgsConstructor
-public class Task extends AbstractPersistableCustom<Long> {
+public class Task extends AbstractPersistableCustom {
 
     @Column(name = "WORKFLOW_KEY")
     private Long workflowKey;

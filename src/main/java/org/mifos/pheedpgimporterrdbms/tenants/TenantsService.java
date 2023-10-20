@@ -3,6 +3,13 @@ package org.mifos.pheedpgimporterrdbms.tenants;
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
 import jakarta.annotation.PostConstruct;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+import javax.sql.DataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.DisposableBean;
@@ -11,16 +18,9 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.env.Environment;
 import org.springframework.stereotype.Component;
 
-import javax.sql.DataSource;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
-
 @Component
 public class TenantsService implements DisposableBean {
+
     private Logger logger = LoggerFactory.getLogger(this.getClass());
 
     @Value("${datasource.common.protocol}")
@@ -32,7 +32,6 @@ public class TenantsService implements DisposableBean {
     @Value("${datasource.common.driverclass_name}")
     private String driverClass;
 
-
     @Autowired
     private Environment environment;
 
@@ -43,13 +42,11 @@ public class TenantsService implements DisposableBean {
 
     private Map<String, DataSource> tenantDataSources = new HashMap<>();
 
-
     @PostConstruct
     public void setup() {
         String[] activeProfiles = environment.getActiveProfiles();
         List<String> tenants = Stream.of(activeProfiles)
-                .map(profile -> profile.startsWith("tenant-") ? profile.substring("tenant-".length()) : null)
-                .filter(Objects::nonNull)
+                .map(profile -> profile.startsWith("tenant-") ? profile.substring("tenant-".length()) : null).filter(Objects::nonNull)
                 .toList();
         logger.info("Loaded tenants from configuration: {}", tenants);
 
@@ -66,7 +63,6 @@ public class TenantsService implements DisposableBean {
             tenantDataSources.put(name, createNewDataSourceFor(properties));
         });
     }
-
 
     public DataSource getTenantDataSource(String tenantIdentifier) {
         return tenantDataSources.get(tenantIdentifier);
@@ -88,7 +84,6 @@ public class TenantsService implements DisposableBean {
             }
         });
     }
-
 
     private String createJdbcUrl(String jdbcProtocol, String jdbcSubprotocol, String hostname, int port, String dbName) {
         return jdbcProtocol + ':' + jdbcSubprotocol + "://" + hostname + ':' + port + '/' + dbName;

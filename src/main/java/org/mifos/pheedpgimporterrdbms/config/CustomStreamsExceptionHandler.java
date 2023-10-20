@@ -4,12 +4,8 @@ import org.apache.kafka.streams.errors.StreamsUncaughtExceptionHandler;
 
 public class CustomStreamsExceptionHandler implements StreamsUncaughtExceptionHandler {
 
-@Override
+    @Override
     public StreamThreadExceptionResponse handle(Throwable exception) {
         return null;
     }
 }
-
-
-
-

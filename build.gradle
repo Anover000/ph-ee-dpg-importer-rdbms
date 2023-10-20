@@ -21,10 +21,8 @@ publishing {
     publications {
         maven(MavenPublication) {
             from(components.java)
-//			artifact file("build/libs/ph-ee-dpg-exporter-0.0.1-SNAPSHOT.jar")
-
+            //			artifact file("build/libs/ph-ee-dpg-exporter-0.0.1-SNAPSHOT.jar")
         }
-
     }
 }
 
