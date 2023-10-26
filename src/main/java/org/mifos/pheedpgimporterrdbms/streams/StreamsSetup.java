@@ -80,8 +80,6 @@ public class StreamsSetup {
 
     public void process(Object _key, Object _value) {
 
-        logger.info("*****************************************----------*********************");
-
         Windowed<String> key = (Windowed<String>) _key;
         List<String> records = (List<String>) _value;
 
