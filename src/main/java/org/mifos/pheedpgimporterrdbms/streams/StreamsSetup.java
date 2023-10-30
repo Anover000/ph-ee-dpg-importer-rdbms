@@ -180,7 +180,7 @@ public class StreamsSetup {
             }
             bpmnProcessIdWithTenant = ids.get(0);
         }
-        logger.debug("resolved bpmnProcessIdWithTenant: {}", bpmnProcessIdWithTenant);
+        logger.info("resolved bpmnProcessIdWithTenant: {}", bpmnProcessIdWithTenant);
         return bpmnProcessIdWithTenant;
     }
 

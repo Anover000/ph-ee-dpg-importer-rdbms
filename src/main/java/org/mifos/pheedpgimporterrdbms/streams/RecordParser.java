@@ -69,7 +69,7 @@ public class RecordParser {
 
             if ("SCHEDULED".equals(taskStatus)) {
 
-                logger.debug("found {} constant transformers for flow start {}", constantTransformers.size(), bpmn);
+                logger.info("found {} constant transformers for flow start {}", constantTransformers.size(), bpmn);
                 Long scheduledTime = recordDocument.read("$.scheduledTime");
 
                 List<Object> entities = processTask(recordDocument, workflowInstanceKey, "Task", scheduledTime);
@@ -80,18 +80,26 @@ public class RecordParser {
                     });
                 }
 
-                Map<String, String> inputDataMap = recordDocument.read("$.inputData");
+                Map<String, Object> inputDataMap = recordDocument.read("$.inputData");
                 inputDataMap.forEach((key, value) -> {
-                    List<Object> variables = processVariable(key, value, bpmn, workflowInstanceKey, scheduledTime, flowType);
+                    if (value == null) {
+                        value = "";
+                    }
+                    List<Object> variables = processVariable(key, value.toString(), bpmn, workflowInstanceKey, scheduledTime, flowType);
+                    logger.info("###### {} ###### {} ######", key, value);
                     variables.forEach(variable -> {
+                        logger.info("********** {} *******", variable.toString());
                         variableRepository.save((Variable) variable);
                     });
                 });
 
             } else if ("COMPLETED".equals(taskStatus)) {
-                Map<String, String> outputDataMap = recordDocument.read("$.outputData");
+                Map<String, Object> outputDataMap = recordDocument.read("$.outputData");
                 outputDataMap.forEach((key, value) -> {
-                    processVariable(key, value, bpmn, workflowInstanceKey, recordDocument.read("$.endTime"), flowType);
+                    if (value == null) {
+                        value = "";
+                    }
+                    processVariable(key, value.toString(), bpmn, workflowInstanceKey, recordDocument.read("$.endTime"), flowType);
                 });
             }
 
@@ -180,11 +188,11 @@ public class RecordParser {
 
     private void applyTransformer(Object object, String variableName, String variableValue,
             TransferTransformerConfig.Transformer transformer) {
-        logger.debug("applying transformer for field: {}", transformer.getField());
+        logger.info("applying transformer for field: {}", transformer.getField());
         try {
             String fieldName = transformer.getField();
             if (Strings.isNotBlank(transformer.getConstant())) {
-                logger.debug("setting constant value: {}", transformer.getConstant());
+                logger.info("setting constant value: {}", transformer.getConstant());
                 PropertyAccessorFactory.forBeanPropertyAccess(object).setPropertyValue(fieldName, transformer.getConstant());
                 return;
             }
@@ -193,7 +201,7 @@ public class RecordParser {
                 logger.info("applying jsonpath for variable {}", variableName);
                 DocumentContext json = JsonPathReader.parse(variableValue);
                 Object result = json.read(transformer.getJsonPath());
-                logger.debug("jsonpath result: {} for variable {}", result, variableName);
+                logger.info("jsonpath result: {} for variable {}", result, variableName);
 
                 String value = null;
                 if (result != null) {
@@ -217,10 +225,10 @@ public class RecordParser {
             }
 
             if (Strings.isNotBlank(transformer.getXpath())) {
-                logger.debug("applying xpath for variable {}", variableName);
+                logger.info("applying xpath for variable {}", variableName);
                 Document document = documentBuilderFactory.newDocumentBuilder().parse(new InputSource(new StringReader(variableValue)));
                 String result = pathFactory.newXPath().compile(transformer.getXpath()).evaluate(document);
-                logger.debug("xpath result: {} for variable {}", result, variableName);
+                logger.info("xpath result: {} for variable {}", result, variableName);
                 if (StringUtils.isNotBlank(result)) {
                     PropertyAccessorFactory.forBeanPropertyAccess(object).setPropertyValue(fieldName, result);
                 } else {
@@ -230,7 +238,7 @@ public class RecordParser {
                 return;
             }
 
-            logger.debug("setting simple variable value: {} for variable {}", variableValue, variableName);
+            logger.info("setting simple variable value: {} for variable {}", variableValue, variableName);
             PropertyAccessorFactory.forBeanPropertyAccess(object).setPropertyValue(fieldName, variableValue);
 
         } catch (Exception e) {
